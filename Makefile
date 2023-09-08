@@ -1,0 +1,4 @@
+.dummy:
+
+generate:
+	go generate ./...
