@@ -24,9 +24,21 @@ func Example_Todo() {
 	}
 	// Output:
 
-	task1, err := client.Todo.Create().Save(ctx)
+	task1, err := client.Todo.
+		Create().
+		SetText("Add GraphQL Example").
+		Save(ctx)
 	if err != nil {
 		log.Fatalf("failed creating a todo: %v", err)
 	}
 	fmt.Println(task1)
+
+	task2, err := client.Todo.
+		Create().
+		SetText("Add Tracing Example").
+		Save(ctx)
+	if err != nil {
+		log.Fatalf("failed creating task2: %v", err)
+	}
+	fmt.Println(task2)
 }
