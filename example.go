@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect"
 	"github.com/Grayson/ent-eval/ent"
+	"github.com/Grayson/ent-eval/ent/todo"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -42,6 +43,7 @@ func main() {
 	}
 
 	// queryAllTodos(client, ctx)
+	queryToplevelParentTodos(client, ctx)
 }
 
 func queryAllTodos(client *ent.Client, ctx context.Context) {
@@ -58,5 +60,20 @@ func queryAllTodos(client *ent.Client, ctx context.Context) {
 		for _, c := range children {
 			fmt.Printf("-> %d\n", c.ID)
 		}
+	}
+}
+
+func queryToplevelParentTodos(client *ent.Client, ctx context.Context) {
+	todos, err := client.Todo.Query().
+		Where(
+			todo.Not(todo.HasParent()),
+			todo.HasChildren(),
+		).
+		All(ctx)
+	if err != nil {
+		log.Fatalf("failed querying todos: %v", err)
+	}
+	for _, t := range todos {
+		fmt.Printf("%d: %q\n", t.ID, t.Text)
 	}
 }
