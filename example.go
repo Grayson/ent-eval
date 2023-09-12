@@ -41,6 +41,10 @@ func main() {
 		log.Fatalf("failed creating task2: %v", err)
 	}
 
+	// queryAllTodos(client, ctx)
+}
+
+func queryAllTodos(client *ent.Client, ctx context.Context) {
 	items, err := client.Todo.Query().All(ctx)
 	if err != nil {
 		log.Fatalf("failed querying todos: %v", err)
