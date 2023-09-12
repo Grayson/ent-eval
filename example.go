@@ -1,4 +1,4 @@
-package todo
+package main
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func Example_Todo() {
+func main() {
 	// Create an ent.Client with in-memory SQLite database.
 	client, err := ent.Open(dialect.SQLite, "file:ent?mode=memory&cache=shared&_fk=1")
 	if err != nil {
@@ -31,14 +31,28 @@ func Example_Todo() {
 	if err != nil {
 		log.Fatalf("failed creating a todo: %v", err)
 	}
-	fmt.Println(task1)
 
-	task2, err := client.Todo.
+	_, err = client.Todo.
 		Create().
 		SetText("Add Tracing Example").
+		SetParent(task1).
 		Save(ctx)
 	if err != nil {
 		log.Fatalf("failed creating task2: %v", err)
 	}
-	fmt.Println(task2)
+
+	items, err := client.Todo.Query().All(ctx)
+	if err != nil {
+		log.Fatalf("failed querying todos: %v", err)
+	}
+	for _, t := range items {
+		children, err := t.QueryChildren().All(ctx)
+		fmt.Printf("%d: %q (%d children)\n", t.ID, t.Text, len(children))
+		if err != nil {
+			continue
+		}
+		for _, c := range children {
+			fmt.Printf("-> %d\n", c.ID)
+		}
+	}
 }
