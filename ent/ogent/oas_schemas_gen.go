@@ -3,6 +3,7 @@
 package ogent
 
 import (
+	"io"
 	"time"
 
 	"github.com/go-faster/errors"
@@ -444,6 +445,27 @@ func (*R500) listTodoRes()         {}
 func (*R500) readTodoParentRes()   {}
 func (*R500) readTodoRes()         {}
 func (*R500) updateTodoRes()       {}
+
+type ServerStatusOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s ServerStatusOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+func (*ServerStatusOK) serverStatusRes() {}
+
+// ServerStatusServiceUnavailable is response for ServerStatus operation.
+type ServerStatusServiceUnavailable struct{}
+
+func (*ServerStatusServiceUnavailable) serverStatusRes() {}
 
 // Ref: #/components/schemas/Todo_ChildrenList
 type TodoChildrenList struct {

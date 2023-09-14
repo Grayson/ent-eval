@@ -44,58 +44,50 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		switch elem[0] {
-		case '/': // Prefix: "/todos"
-			if l := len("/todos"); len(elem) >= l && elem[0:l] == "/todos" {
+		case '/': // Prefix: "/"
+			if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 				elem = elem[l:]
 			} else {
 				break
 			}
 
 			if len(elem) == 0 {
-				switch r.Method {
-				case "GET":
-					s.handleListTodoRequest([0]string{}, elemIsEscaped, w, r)
-				case "POST":
-					s.handleCreateTodoRequest([0]string{}, elemIsEscaped, w, r)
-				default:
-					s.notAllowed(w, r, "GET,POST")
-				}
-
-				return
+				break
 			}
 			switch elem[0] {
-			case '/': // Prefix: "/"
-				if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+			case 's': // Prefix: "status"
+				if l := len("status"); len(elem) >= l && elem[0:l] == "status" {
 					elem = elem[l:]
 				} else {
 					break
 				}
 
-				// Param: "id"
-				// Match until "/"
-				idx := strings.IndexByte(elem, '/')
-				if idx < 0 {
-					idx = len(elem)
+				if len(elem) == 0 {
+					// Leaf node.
+					switch r.Method {
+					case "GET":
+						s.handleServerStatusRequest([0]string{}, elemIsEscaped, w, r)
+					default:
+						s.notAllowed(w, r, "GET")
+					}
+
+					return
 				}
-				args[0] = elem[:idx]
-				elem = elem[idx:]
+			case 't': // Prefix: "todos"
+				if l := len("todos"); len(elem) >= l && elem[0:l] == "todos" {
+					elem = elem[l:]
+				} else {
+					break
+				}
 
 				if len(elem) == 0 {
 					switch r.Method {
-					case "DELETE":
-						s.handleDeleteTodoRequest([1]string{
-							args[0],
-						}, elemIsEscaped, w, r)
 					case "GET":
-						s.handleReadTodoRequest([1]string{
-							args[0],
-						}, elemIsEscaped, w, r)
-					case "PATCH":
-						s.handleUpdateTodoRequest([1]string{
-							args[0],
-						}, elemIsEscaped, w, r)
+						s.handleListTodoRequest([0]string{}, elemIsEscaped, w, r)
+					case "POST":
+						s.handleCreateTodoRequest([0]string{}, elemIsEscaped, w, r)
 					default:
-						s.notAllowed(w, r, "DELETE,GET,PATCH")
+						s.notAllowed(w, r, "GET,POST")
 					}
 
 					return
@@ -108,49 +100,87 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						break
 					}
 
+					// Param: "id"
+					// Match until "/"
+					idx := strings.IndexByte(elem, '/')
+					if idx < 0 {
+						idx = len(elem)
+					}
+					args[0] = elem[:idx]
+					elem = elem[idx:]
+
 					if len(elem) == 0 {
-						break
+						switch r.Method {
+						case "DELETE":
+							s.handleDeleteTodoRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
+						case "GET":
+							s.handleReadTodoRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
+						case "PATCH":
+							s.handleUpdateTodoRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, "DELETE,GET,PATCH")
+						}
+
+						return
 					}
 					switch elem[0] {
-					case 'c': // Prefix: "children"
-						if l := len("children"); len(elem) >= l && elem[0:l] == "children" {
+					case '/': // Prefix: "/"
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 							elem = elem[l:]
 						} else {
 							break
 						}
 
 						if len(elem) == 0 {
-							// Leaf node.
-							switch r.Method {
-							case "GET":
-								s.handleListTodoChildrenRequest([1]string{
-									args[0],
-								}, elemIsEscaped, w, r)
-							default:
-								s.notAllowed(w, r, "GET")
-							}
-
-							return
-						}
-					case 'p': // Prefix: "parent"
-						if l := len("parent"); len(elem) >= l && elem[0:l] == "parent" {
-							elem = elem[l:]
-						} else {
 							break
 						}
-
-						if len(elem) == 0 {
-							// Leaf node.
-							switch r.Method {
-							case "GET":
-								s.handleReadTodoParentRequest([1]string{
-									args[0],
-								}, elemIsEscaped, w, r)
-							default:
-								s.notAllowed(w, r, "GET")
+						switch elem[0] {
+						case 'c': // Prefix: "children"
+							if l := len("children"); len(elem) >= l && elem[0:l] == "children" {
+								elem = elem[l:]
+							} else {
+								break
 							}
 
-							return
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleListTodoChildrenRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, "GET")
+								}
+
+								return
+							}
+						case 'p': // Prefix: "parent"
+							if l := len("parent"); len(elem) >= l && elem[0:l] == "parent" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleReadTodoParentRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, "GET")
+								}
+
+								return
+							}
 						}
 					}
 				}
@@ -224,72 +254,60 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 			break
 		}
 		switch elem[0] {
-		case '/': // Prefix: "/todos"
-			if l := len("/todos"); len(elem) >= l && elem[0:l] == "/todos" {
+		case '/': // Prefix: "/"
+			if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 				elem = elem[l:]
 			} else {
 				break
 			}
 
 			if len(elem) == 0 {
-				switch method {
-				case "GET":
-					r.name = "ListTodo"
-					r.operationID = "listTodo"
-					r.pathPattern = "/todos"
-					r.args = args
-					r.count = 0
-					return r, true
-				case "POST":
-					r.name = "CreateTodo"
-					r.operationID = "createTodo"
-					r.pathPattern = "/todos"
-					r.args = args
-					r.count = 0
-					return r, true
-				default:
-					return
-				}
+				break
 			}
 			switch elem[0] {
-			case '/': // Prefix: "/"
-				if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+			case 's': // Prefix: "status"
+				if l := len("status"); len(elem) >= l && elem[0:l] == "status" {
 					elem = elem[l:]
 				} else {
 					break
 				}
 
-				// Param: "id"
-				// Match until "/"
-				idx := strings.IndexByte(elem, '/')
-				if idx < 0 {
-					idx = len(elem)
+				if len(elem) == 0 {
+					switch method {
+					case "GET":
+						// Leaf: ServerStatus
+						r.name = "ServerStatus"
+						r.operationID = "ServerStatus"
+						r.pathPattern = "/status"
+						r.args = args
+						r.count = 0
+						return r, true
+					default:
+						return
+					}
 				}
-				args[0] = elem[:idx]
-				elem = elem[idx:]
+			case 't': // Prefix: "todos"
+				if l := len("todos"); len(elem) >= l && elem[0:l] == "todos" {
+					elem = elem[l:]
+				} else {
+					break
+				}
 
 				if len(elem) == 0 {
 					switch method {
-					case "DELETE":
-						r.name = "DeleteTodo"
-						r.operationID = "deleteTodo"
-						r.pathPattern = "/todos/{id}"
-						r.args = args
-						r.count = 1
-						return r, true
 					case "GET":
-						r.name = "ReadTodo"
-						r.operationID = "readTodo"
-						r.pathPattern = "/todos/{id}"
+						r.name = "ListTodo"
+						r.operationID = "listTodo"
+						r.pathPattern = "/todos"
 						r.args = args
-						r.count = 1
+						r.count = 0
 						return r, true
-					case "PATCH":
-						r.name = "UpdateTodo"
-						r.operationID = "updateTodo"
-						r.pathPattern = "/todos/{id}"
+					case "POST":
+						r.name = "CreateTodo"
+						r.operationID = "createTodo"
+						r.pathPattern = "/todos"
 						r.args = args
-						r.count = 1
+						r.count = 0
 						return r, true
 					default:
 						return
@@ -303,50 +321,95 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						break
 					}
 
+					// Param: "id"
+					// Match until "/"
+					idx := strings.IndexByte(elem, '/')
+					if idx < 0 {
+						idx = len(elem)
+					}
+					args[0] = elem[:idx]
+					elem = elem[idx:]
+
 					if len(elem) == 0 {
-						break
+						switch method {
+						case "DELETE":
+							r.name = "DeleteTodo"
+							r.operationID = "deleteTodo"
+							r.pathPattern = "/todos/{id}"
+							r.args = args
+							r.count = 1
+							return r, true
+						case "GET":
+							r.name = "ReadTodo"
+							r.operationID = "readTodo"
+							r.pathPattern = "/todos/{id}"
+							r.args = args
+							r.count = 1
+							return r, true
+						case "PATCH":
+							r.name = "UpdateTodo"
+							r.operationID = "updateTodo"
+							r.pathPattern = "/todos/{id}"
+							r.args = args
+							r.count = 1
+							return r, true
+						default:
+							return
+						}
 					}
 					switch elem[0] {
-					case 'c': // Prefix: "children"
-						if l := len("children"); len(elem) >= l && elem[0:l] == "children" {
+					case '/': // Prefix: "/"
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 							elem = elem[l:]
 						} else {
 							break
 						}
 
 						if len(elem) == 0 {
-							switch method {
-							case "GET":
-								// Leaf: ListTodoChildren
-								r.name = "ListTodoChildren"
-								r.operationID = "listTodoChildren"
-								r.pathPattern = "/todos/{id}/children"
-								r.args = args
-								r.count = 1
-								return r, true
-							default:
-								return
+							break
+						}
+						switch elem[0] {
+						case 'c': // Prefix: "children"
+							if l := len("children"); len(elem) >= l && elem[0:l] == "children" {
+								elem = elem[l:]
+							} else {
+								break
 							}
-						}
-					case 'p': // Prefix: "parent"
-						if l := len("parent"); len(elem) >= l && elem[0:l] == "parent" {
-							elem = elem[l:]
-						} else {
-							break
-						}
 
-						if len(elem) == 0 {
-							switch method {
-							case "GET":
-								// Leaf: ReadTodoParent
-								r.name = "ReadTodoParent"
-								r.operationID = "readTodoParent"
-								r.pathPattern = "/todos/{id}/parent"
-								r.args = args
-								r.count = 1
-								return r, true
-							default:
-								return
+							if len(elem) == 0 {
+								switch method {
+								case "GET":
+									// Leaf: ListTodoChildren
+									r.name = "ListTodoChildren"
+									r.operationID = "listTodoChildren"
+									r.pathPattern = "/todos/{id}/children"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+						case 'p': // Prefix: "parent"
+							if l := len("parent"); len(elem) >= l && elem[0:l] == "parent" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								switch method {
+								case "GET":
+									// Leaf: ReadTodoParent
+									r.name = "ReadTodoParent"
+									r.operationID = "readTodoParent"
+									r.pathPattern = "/todos/{id}/parent"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
 							}
 						}
 					}

@@ -3,6 +3,7 @@
 package ogent
 
 import (
+	"bytes"
 	"io"
 	"mime"
 	"net/http"
@@ -1029,6 +1030,34 @@ func decodeReadTodoParentResponse(resp *http.Response) (res ReadTodoParentRes, _
 		default:
 			return res, validate.InvalidContentType(ct)
 		}
+	}
+	return res, validate.UnexpectedStatusCode(resp.StatusCode)
+}
+
+func decodeServerStatusResponse(resp *http.Response) (res ServerStatusRes, _ error) {
+	switch resp.StatusCode {
+	case 200:
+		// Code 200.
+		ct, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+		if err != nil {
+			return res, errors.Wrap(err, "parse media type")
+		}
+		switch {
+		case ct == "text/plain":
+			reader := resp.Body
+			b, err := io.ReadAll(reader)
+			if err != nil {
+				return res, err
+			}
+
+			response := ServerStatusOK{Data: bytes.NewReader(b)}
+			return &response, nil
+		default:
+			return res, validate.InvalidContentType(ct)
+		}
+	case 503:
+		// Code 503.
+		return &ServerStatusServiceUnavailable{}, nil
 	}
 	return res, validate.UnexpectedStatusCode(resp.StatusCode)
 }

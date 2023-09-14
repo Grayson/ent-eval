@@ -25,6 +25,10 @@ type ReadTodoRes interface {
 	readTodoRes()
 }
 
+type ServerStatusRes interface {
+	serverStatusRes()
+}
+
 type UpdateTodoRes interface {
 	updateTodoRes()
 }

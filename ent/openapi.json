@@ -6,6 +6,28 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/status": {
+      "description": "Returns basic data about the server",
+      "get": {
+        "summary": "Get information about the server",
+        "operationId": "ServerStatus",
+        "responses": {
+          "200": {
+            "description": "Server is alive and well",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Server is unavailable"
+          }
+        }
+      }
+    },
     "/todos": {
       "get": {
         "tags": [

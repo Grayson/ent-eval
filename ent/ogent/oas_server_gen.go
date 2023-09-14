@@ -44,6 +44,12 @@ type Handler interface {
 	//
 	// GET /todos/{id}/parent
 	ReadTodoParent(ctx context.Context, params ReadTodoParentParams) (ReadTodoParentRes, error)
+	// ServerStatus implements ServerStatus operation.
+	//
+	// Get information about the server.
+	//
+	// GET /status
+	ServerStatus(ctx context.Context) (ServerStatusRes, error)
 	// UpdateTodo implements updateTodo operation.
 	//
 	// Updates a Todo and persists changes to storage.

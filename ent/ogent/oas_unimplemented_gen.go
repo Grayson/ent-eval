@@ -67,6 +67,15 @@ func (UnimplementedHandler) ReadTodoParent(ctx context.Context, params ReadTodoP
 	return r, ht.ErrNotImplemented
 }
 
+// ServerStatus implements ServerStatus operation.
+//
+// Get information about the server.
+//
+// GET /status
+func (UnimplementedHandler) ServerStatus(ctx context.Context) (r ServerStatusRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // UpdateTodo implements updateTodo operation.
 //
 // Updates a Todo and persists changes to storage.
